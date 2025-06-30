@@ -1,1 +1,1 @@
-create devbox team config with installation of notepad++, docker for windows and this git hub repo cloned: "https://github.com/rmoreirao/Azure-DevBox-Automations"
+create devbox team config with installation of notepad++, WSL2 Ubuntu, docker for windows and this git hub repo cloned: "https://github.com/rmoreirao/Azure-DevBox-Automations"

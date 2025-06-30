@@ -3,15 +3,34 @@ name: "devbox-team-config"
 image: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
 tasks:
   - name: winget
+    description: Install Windows Subsystem for Linux
+    parameters:
+      package: Microsoft.WSL
+  - name: winget
     description: Install Notepad++
     parameters:
       package: Notepad++.Notepad++
   - name: winget
-    description: Install Docker Desktop
+    description: Install WinMerge
     parameters:
-      package: Docker.DockerDesktop
+      package: WinMerge.WinMerge
   - name: git-clone
     description: Clone the Azure-DevBox-Automations repository
     parameters:
       repositoryUrl: https://github.com/rmoreirao/Azure-DevBox-Automations
       directory: 'C:\Workspaces'
+userTasks:
+  - name: powershell
+    description: Install WSL Ubuntu distribution using official command
+    parameters:
+      command: "$wslOutput = wsl.exe -l | Out-String; if ($wslOutput -match 'Ubuntu-24.04') { wsl --install -d Ubuntu-24.04 --no-launch; }"
+
+  - name: powershell
+    description: Create desktop shortcut for WSL Ubuntu-24.04
+    parameters:
+      command: "$wslOutput = wsl.exe -l | Out-String; if ($wslOutput -match 'Ubuntu-24.04') { $ShortcutPath = [System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Ubuntu-24.04.lnk'); $WScriptShell = New-Object -ComObject WScript.Shell; $Shortcut = $WScriptShell.CreateShortcut($ShortcutPath); $Shortcut.TargetPath = 'wsl.exe'; $Shortcut.Arguments = '-d Ubuntu-24.04'; $Shortcut.Save() }"
+
+  - name: winget
+    description: Install Podman Desktop
+    parameters:
+      package: RedHat.Podman-Desktop

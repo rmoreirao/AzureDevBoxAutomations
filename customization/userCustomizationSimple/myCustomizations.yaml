@@ -1,7 +1,25 @@
 $schema: "1.0"
 name: "devbox-customization"
 userTasks:
-  - name: ~/winget
+  - name: winget
     description: "Install Postman"
     parameters:
       package: Postman.Postman
+
+  - name: powershell
+    description: "Install VS Code Extensions"
+    parameters:
+      command: |
+        $extensions = @(
+          "ms-dotnettools.csharp",
+          "ms-python.python",
+          "ms-toolsai.jupyter",
+          "devcenter.ms-devbox",
+          "eamodio.gitlens",
+          "github.copilot",
+          "github.copilot-chat",
+          "github.vscode-pull-request-github"
+        )
+        foreach ($ext in $extensions) {
+            code --install-extension $ext
+        }

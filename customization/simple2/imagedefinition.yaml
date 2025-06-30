@@ -1,0 +1,17 @@
+$schema: "1.0"
+name: "devbox-team-config-simple2"
+image: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
+tasks:
+  - name: winget
+    description: Install Notepad++
+    parameters:
+      package: Notepad++.Notepad++
+  - name: winget
+    description: Install Docker Desktop
+    parameters:
+      package: Docker.DockerDesktop
+  - name: git-clone
+    description: Clone the Azure-DevBox-Automations repository
+    parameters:
+      repositoryUrl: https://github.com/rmoreirao/Azure-DevBox-Automations
+      directory: 'C:\Workspaces'

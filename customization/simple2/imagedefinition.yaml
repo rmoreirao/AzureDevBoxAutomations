@@ -1,5 +1,5 @@
 $schema: "1.0"
-name: "devbox-team-config"
+name: "devbox-team-config-simple2"
 image: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
 tasks:
   - name: winget

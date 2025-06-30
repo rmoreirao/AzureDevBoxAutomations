@@ -28,7 +28,7 @@ userTasks:
   - name: powershell
     description: Create desktop shortcut for WSL Ubuntu-24.04
     parameters:
-      command: "$wslOutput = wsl.exe -l | Out-String; if ($wslOutput -notmatch 'Ubuntu-24.04') { $ShortcutPath = [System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Ubuntu-24.04.lnk'); $WScriptShell = New-Object -ComObject WScript.Shell; $Shortcut = $WScriptShell.CreateShortcut($ShortcutPath); $Shortcut.TargetPath = 'wsl.exe'; $Shortcut.Arguments = '-d Ubuntu-24.04'; $Shortcut.Save() }"
+      command: "$ShortcutPath = [System.IO.Path]::Combine([Environment]::GetFolderPath('Desktop'), 'Ubuntu-24.04.lnk'); $WScriptShell = New-Object -ComObject WScript.Shell; $Shortcut = $WScriptShell.CreateShortcut($ShortcutPath); $Shortcut.TargetPath = 'wsl.exe'; $Shortcut.Arguments = '-d Ubuntu-24.04'; $Shortcut.Save()"
 
   - name: winget
     description: Install Podman Desktop

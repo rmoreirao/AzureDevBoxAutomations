@@ -40,26 +40,35 @@
          "type": "PlatformImage",
          "publisher": "MicrosoftWindowsDesktop",
          "offer": "Windows-11",
-         "sku": "win11-21h2-ent",
+         "sku": "win11-23h2-ent",
          "version": "latest"
       },
         "customize": [
          {
             "type": "PowerShell",
-            "name": "Install Choco and VS Code",
+            "name": "Install Choco and WSL2",
             "inline": [
                "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
                "choco install -y vscode",
                "choco install VirtualMachinePlatform -y -source windowsfeatures",
                "choco install Microsoft-Windows-Subsystem-Linux -y -source windowsfeatures",
-               "choco install wsl2 --params \"/Version:2 /Retry:true\" -y",
-               "wsl --install -d Ubuntu-24.04 --no-launch",
-               "choco install docker-cli -y",
-               "choco install docker-desktop -y"
+               "choco install wsl2 --params \"/Version:2 /Retry:true\" -y"
             ]
          },
          {
-            "type": "WindowsRestart"
+            "type": "WindowsRestart",
+            "name": "Restart after WSL2 and Docker installation"
+         },
+         {
+            "type": "PowerShell",
+            "name": "Install WSL2 Ubuntu and Docker",
+            "inline": [
+               "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
+               "wsl --set-default-version 2",
+               "choco install wsl-ubuntu-2204 -y --ignore-checksums",
+               "choco install docker-cli -y",
+               "choco install docker-desktop -y"
+            ]
          }
         ],
          "distribute": 

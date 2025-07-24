@@ -58,8 +58,6 @@ New-AzRoleAssignment -ObjectId $identityNamePrincipalId -RoleDefinitionName $ima
 # Gallery name 
 $galleryName= "devboxGallery"
 
-
-
 # Additional replication region 
 $replRegion2="germanywestcentral"
 

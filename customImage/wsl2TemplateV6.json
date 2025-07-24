@@ -52,23 +52,23 @@
                "choco install -y vscode",
                "choco install VirtualMachinePlatform -y -source windowsfeatures",
                "choco install Microsoft-Windows-Subsystem-Linux -y -source windowsfeatures",
-               "choco install wsl2 --params \"/Version:2 /Retry:true\" -y"
+               "choco install wsl2 --params \"/Version:2 /Retry:true\" -y",
+               "wsl --set-default-version 2",
+               "$ubuntuUrl = 'https://aka.ms/wslubuntu2204'",
+               "$ubuntuPath = '$env:TEMP\\ubuntu2204.appx'",
+               "Write-Host 'Downloading Ubuntu 22.04...'",
+               "Invoke-WebRequest -Uri $ubuntuUrl -OutFile $ubuntuPath -UseBasicParsing",
+               "Write-Host 'Installing Ubuntu 22.04...'",
+               "try { Add-AppxPackage -Path $ubuntuPath -ErrorAction Stop } catch { Write-Host 'AppX install attempted with warnings: ' + $_.Exception.Message }",
+               "Remove-Item $ubuntuPath -Force -ErrorAction SilentlyContinue",
+               "Write-Host 'Installing Docker components...'",
+               "choco install docker-cli -y",
+               "choco install docker-desktop -y"
             ]
          },
          {
             "type": "WindowsRestart",
             "name": "Restart after WSL2 and Docker installation"
-         },
-         {
-            "type": "PowerShell",
-            "name": "Install WSL2 Ubuntu and Docker",
-            "inline": [
-               "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
-               "wsl --set-default-version 2",
-               "choco install wsl-ubuntu-2204 -y --ignore-checksums",
-               "choco install docker-cli -y",
-               "choco install docker-desktop -y"
-            ]
          }
         ],
          "distribute": 

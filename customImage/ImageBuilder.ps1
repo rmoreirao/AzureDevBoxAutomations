@@ -126,7 +126,7 @@ function Start-CustomImageBuild {
         $currentState = $buildStatus.LastRunStatusRunState
         $currentMessage = $buildStatus.LastRunStatusMessage
         
-        Write-Host "Current Status: $currentState" -ForegroundColor Yellow
+        Write-Host "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Current Status: $currentState" -ForegroundColor Yellow
         if ($currentMessage) {
             Write-Host "Message: $currentMessage" -ForegroundColor Gray
         }
@@ -149,11 +149,11 @@ function Start-CustomImageBuild {
 
 
 # Image definition name 
-$imageDefName ="wsl2ImageDef"
+$imageDefName ="wsl2ImageDefV3"
 # Image template name  
-$imageTemplateName="wsl2WinTemplate"
+$imageTemplateName="wsl2WinTemplateV3"
 
-$templateFilename="wsl2Template.json"
+$templateFilename="wsl2TemplateV3.json"
 
 # Call the new function instead of inline code
 Start-CustomImageBuild -originalTemplateFilename $templateFilename -imageDefName $imageDefName -imageTemplateName $imageTemplateName

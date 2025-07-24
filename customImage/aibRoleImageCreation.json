@@ -1,0 +1,25 @@
+{
+    "Name": "Azure Image Builder Image Def1753353392",
+    "IsCustom": true,
+    "Description": "Image Builder access to create resources for the image build, you should delete or split out as appropriate",
+    "Actions": [
+        "Microsoft.Compute/galleries/read",
+        "Microsoft.Compute/galleries/images/read",
+        "Microsoft.Compute/galleries/images/versions/read",
+        "Microsoft.Compute/galleries/images/versions/write",
+
+        "Microsoft.Compute/images/write",
+        "Microsoft.Compute/images/read",
+        "Microsoft.Compute/images/delete"
+    ],
+    "NotActions": [
+  
+    ],
+    "AssignableScopes": [
+      "/subscriptions/b0dfd5b3-9f3c-4fb5-ae5e-0e7f81eab970/resourceGroups/rg-demo-devbox"
+    ]
+  }
+
+
+
+

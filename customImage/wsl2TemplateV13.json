@@ -1,0 +1,97 @@
+{
+   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+   "contentVersion": "1.0.0.0",
+   "parameters": {
+     "imageTemplateName": {
+      "type": "string"
+     },
+     "api-version": {
+      "type": "string"
+     },
+     "svclocation": {
+      "type": "string"
+     }
+   },
+   "variables": {},
+   "resources": [
+     {
+      "name": "[parameters('imageTemplateName')]",
+      "type": "Microsoft.VirtualMachineImages/imageTemplates",
+      "apiVersion": "[parameters('api-version')]",
+      "location": "[parameters('svclocation')]",
+      "dependsOn": [],
+      "tags": {
+        "imagebuilderTemplate": "win11multi",
+        "userIdentity": "enabled"
+      },
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+         "<imgBuilderId>": {}
+        }
+      },
+      "properties": {
+        "buildTimeoutInMinutes": 100,
+        "vmProfile": {
+         "vmSize": "Standard_D8as_v5",
+         "osDiskSizeGB": 127
+        },
+      "source": {
+         "type": "PlatformImage",
+         "publisher": "MicrosoftWindowsDesktop",
+         "offer": "Windows-11",
+         "sku": "win11-23h2-ent",
+         "version": "latest"
+      },
+        "customize": [
+         {
+            "type": "PowerShell",
+            "name": "Install Choco and WSL2",
+            "inline": [
+               "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
+               "choco install -y vscode",
+               "choco install VirtualMachinePlatform -y -source windowsfeatures",
+               "choco install Microsoft-Windows-Subsystem-Linux -y -source windowsfeatures",
+               "choco install wsl2 --params \"/Version:2 /Retry:true\" -y"
+            ]
+         },
+         {
+            "type": "WindowsRestart",
+            "name": "Restart after WSL2 and Docker installation"
+         },
+         {
+            "type": "PowerShell",
+            "name": "Install WSL2 Ubuntu 22.04",
+            "inline": [
+               "wsl --set-default-version 2",
+               "$tempDir = [System.IO.Path]::GetTempPath()",
+               "$ubuntuUrl = 'https://aka.ms/wslubuntu2204'",
+               "$ubuntuPath = Join-Path $tempDir 'ubuntu2204.appx'",
+               "Write-Host 'Downloading Ubuntu 22.04...'",
+               "Invoke-WebRequest -Uri $ubuntuUrl -OutFile $ubuntuPath -UseBasicParsing",
+               "Write-Host 'Installing Ubuntu 22.04...'",
+               "try { Add-AppxPackage -Path $ubuntuPath -ErrorAction Stop } catch { Write-Host 'AppX install attempted with warnings: ' + $_.Exception.Message }",
+               "if (Test-Path $ubuntuPath) { Remove-Item $ubuntuPath -Force }"
+            ]
+         }
+        ],
+         "distribute": 
+         [
+            {   
+               "type": "SharedImage",
+               "galleryImageId": "/subscriptions/<subscriptionID>/resourceGroups/<rgName>/providers/Microsoft.Compute/galleries/<sharedImageGalName>/images/<imageDefName>",
+               "runOutputName": "<runOutputName>",
+               "artifactTags": {
+                  "source": "azureVmImageBuilder",
+                  "baseosimg": "win11multi"
+               },
+               "replicationRegions": [
+                 "<region1>",
+                 "<region2>"
+               ]
+            }
+         ]
+      }
+     }
+   ]
+  }

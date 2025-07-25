@@ -1,0 +1,132 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "imageTemplateName": {
+      "type": "string"
+    },
+    "api-version": {
+      "type": "string"
+    },
+    "svclocation": {
+      "type": "string"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('imageTemplateName')]",
+      "type": "Microsoft.VirtualMachineImages/imageTemplates",
+      "apiVersion": "[parameters('api-version')]",
+      "location": "[parameters('svclocation')]",
+      "dependsOn": [],
+      "tags": {
+        "imagebuilderTemplate": "win11multi",
+        "userIdentity": "enabled"
+      },
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "<imgBuilderId>": {}
+        }
+      },
+      "properties": {
+        "buildTimeoutInMinutes": 100,
+        "vmProfile": {
+          "vmSize": "Standard_D8as_v5",
+          "osDiskSizeGB": 127
+        },
+        "source": {
+          "type": "PlatformImage",
+          "publisher": "MicrosoftWindowsDesktop",
+          "offer": "Windows-11",
+          "sku": "win11-23h2-ent",
+          "version": "latest"
+        },
+        "customize": [
+          {
+            "type": "PowerShell",
+            "name": "Enable WSL2 + docker (system-level)",
+            "inline": [
+              "Write-Host '>> Enable WSL base features'",
+              "dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
+              "dism /online /enable-feature /featurename:VirtualMachinePlatform          /all /norestart",
+
+              "Write-Host '>> Install WSL2 kernel (ALLUSERS=1 so it is machine-wide)'",
+              "$msi = 'C:\\Windows\\Temp\\wsl.msi'",
+              "Invoke-WebRequest 'https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi' -OutFile $msi -UseBasicParsing",
+              "Start-Process msiexec.exe -ArgumentList '/i', $msi, '/quiet', 'ALLUSERS=1' -Wait",
+              "Remove-Item $msi -Force",
+
+              "Write-Host '>> Import Ubuntu 22.04 for all users (provisioned package)'",
+              "$distro = 'C:\\Windows\\Temp\\ubuntu.appx'",
+              "$maxRetries = 3",
+              "$retryCount = 0",
+              "$downloadSuccess = $false",
+              "while ($retryCount -lt $maxRetries -and -not $downloadSuccess) {",
+              "    try {",
+              "        Write-Host \"Download attempt $($retryCount + 1) of $maxRetries\"",
+              "        Invoke-WebRequest 'https://aka.ms/wslubuntu2204' -OutFile $distro -UseBasicParsing -TimeoutSec 300",
+              "        if (Test-Path $distro -and (Get-Item $distro).Length -gt 0) {",
+              "            $downloadSuccess = $true",
+              "            Write-Host 'Ubuntu download successful'",
+              "        }",
+              "    } catch {",
+              "        Write-Host \"Download failed: $($_.Exception.Message)\"",
+              "        $retryCount++",
+              "        if ($retryCount -lt $maxRetries) {",
+              "            Write-Host 'Waiting 30 seconds before retry...'",
+              "            Start-Sleep -Seconds 30",
+              "        }",
+              "    }",
+              "}",
+              "if ($downloadSuccess -and (Test-Path $distro)) {",
+              "    try {",
+              "        Add-AppxProvisionedPackage -Online -PackagePath $distro -SkipLicense",
+              "        Write-Host 'Ubuntu AppX package installed successfully'",
+              "    } catch {",
+              "        Write-Host \"AppX installation failed: $($_.Exception.Message)\"",
+              "    }",
+              "    Remove-Item $distro -Force -ErrorAction SilentlyContinue",
+              "} else {",
+              "    Write-Host 'Ubuntu download failed after all retries, skipping AppX installation'",
+              "}",
+
+              "Write-Host '>> Set WSL default version to 2 and shutdown any instance'",
+              "wsl --set-default-version 2",
+              "wsl --shutdown",
+
+              "Write-Host '>> Clear reboot markers so Sysprep is clean'",
+              "Remove-Item 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired' -EA SilentlyContinue",
+              "Remove-Item 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Component Based Servicing\\RebootPending' -EA SilentlyContinue"
+            ]
+          },
+          {
+            "type": "PowerShell",
+            "name": "Pre-Sysprep guard",
+            "inline": [
+              "Write-Host '>> Verify services before deprovision phase'",
+              "foreach($svc in 'RdAgent','WindowsAzureGuestAgent'){ if(Get-Service -Name $svc -ErrorAction SilentlyContinue){ while((Get-Service $svc).Status -ne 'Running'){ Start-Sleep 5 } } }"
+            ]
+          },
+          {
+            "type": "WindowsRestart",
+            "name": "Mandatory reboot after WSL2 kernel"
+          }
+        ],
+        "distribute": [
+          {
+            "type": "SharedImage",
+            "galleryImageId": "/subscriptions/<subscriptionID>/resourceGroups/<rgName>/providers/Microsoft.Compute/galleries/<sharedImageGalName>/images/<imageDefName>",
+            "runOutputName": "<runOutputName>",
+            "artifactTags": {
+              "source": "azureVmImageBuilder",
+              "baseosimg": "win11multi"
+            },
+            "replicationRegions": ["<region1>", "<region2>"]
+          }
+        ]
+      }
+    }
+  ]
+}

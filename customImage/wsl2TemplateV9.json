@@ -1,0 +1,114 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "imageTemplateName": {
+      "type": "string"
+    },
+    "api-version": {
+      "type": "string"
+    },
+    "svclocation": {
+      "type": "string"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('imageTemplateName')]",
+      "type": "Microsoft.VirtualMachineImages/imageTemplates",
+      "apiVersion": "[parameters('api-version')]",
+      "location": "[parameters('svclocation')]",
+      "dependsOn": [],
+      "tags": {
+        "imagebuilderTemplate": "win11multi",
+        "userIdentity": "enabled"
+      },
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "<imgBuilderId>": {}
+        }
+      },
+      "properties": {
+        "buildTimeoutInMinutes": 100,
+        "vmProfile": {
+          "vmSize": "Standard_D8as_v5",
+          "osDiskSizeGB": 127
+        },
+        "source": {
+          "type": "PlatformImage",
+          "publisher": "MicrosoftWindowsDesktop",
+          "offer": "Windows-11",
+          "sku": "win11-23h2-ent",
+          "version": "latest"
+        },
+        "customize": [
+          {
+            "type": "PowerShell",
+            "name": "Install Choco and WSL2",
+            "inline": [
+              "Write-Host 'Setting up system-level installations...'",
+              "Set-ExecutionPolicy Bypass -Scope Process -Force",
+              "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072",
+              "Write-Host 'Installing Chocolatey at system level...'",
+              "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
+              "refreshenv",
+              "Write-Host 'Installing VS Code system-wide...'",
+              "choco install vscode --params '/MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders,associatewithfiles,addtopath' -y",
+              "Write-Host 'Enabling Windows features for WSL2...'",
+              "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
+              "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart",
+              "Write-Host 'Manually downloading WSL2 kernel update...'",
+              "$wslKernelUrl = 'https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'",
+              "$kernelPath = 'C:\\Windows\\Temp\\wsl_update_x64.msi'",
+              "Invoke-WebRequest -Uri $wslKernelUrl -OutFile $kernelPath -UseBasicParsing",
+              "Write-Host 'Installing WSL2 kernel update system-wide...'",
+              "Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i', $kernelPath, '/quiet', '/norestart', 'ALLUSERS=1' -Wait",
+              "Remove-Item $kernelPath -Force -ErrorAction SilentlyContinue",
+              "Write-Host 'Setting WSL2 as default version...'",
+              "wsl --set-default-version 2",
+              "Write-Host 'Downloading Ubuntu 22.04 distribution...'",
+              "$ubuntuUrl = 'https://aka.ms/wslubuntu2204'",
+              "$ubuntuPath = 'C:\\Windows\\Temp\\ubuntu2204.appx'",
+              "Invoke-WebRequest -Uri $ubuntuUrl -OutFile $ubuntuPath -UseBasicParsing",
+              "Write-Host 'Installing Ubuntu 22.04 for all users...'",
+              "Add-AppxProvisionedPackage -Online -PackagePath $ubuntuPath -SkipLicense",
+              "Remove-Item $ubuntuPath -Force -ErrorAction SilentlyContinue",
+              "Write-Host 'Installing Docker CLI system-wide...'",
+              "choco install docker-cli -y",
+              "Write-Host 'Installing Docker Desktop system-wide...'",
+              "choco install docker-desktop --params '/ALLUSERS=1' -y",
+              "Write-Host 'Configuring system-level PATH updates...'",
+              "$currentPath = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Machine)",
+              "$wslPath = 'C:\\Windows\\System32'",
+              "if ($currentPath -notlike '*C:\\Windows\\System32*') {",
+              "    [Environment]::SetEnvironmentVariable('PATH', \"$currentPath;$wslPath\", [EnvironmentVariableTarget]::Machine)",
+              "}",
+              "Write-Host 'Verifying system-level installations...'",
+              "Get-Command wsl -ErrorAction SilentlyContinue | Out-Host",
+              "Get-Command docker -ErrorAction SilentlyContinue | Out-Host",
+              "wsl --list --verbose | Out-Host"
+            ]
+          },
+          {
+            "type": "WindowsRestart",
+            "name": "Restart after WSL2 and Docker installation"
+          }
+        ],
+        "distribute": [
+          {
+            "type": "SharedImage",
+            "galleryImageId": "/subscriptions/<subscriptionID>/resourceGroups/<rgName>/providers/Microsoft.Compute/galleries/<sharedImageGalName>/images/<imageDefName>",
+            "runOutputName": "<runOutputName>",
+            "artifactTags": {
+              "source": "azureVmImageBuilder",
+              "baseosimg": "win11multi"
+            },
+            "replicationRegions": ["<region1>", "<region2>"]
+          }
+        ]
+      }
+    }
+  ]
+}

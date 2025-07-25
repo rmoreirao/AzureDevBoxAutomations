@@ -163,11 +163,11 @@ function Start-CustomImageBuild {
 }
 
 # Image definition name 
-$imageDefName ="wsl2TemplateV13"
+$imageDefName ="wsl2TemplateV16"
 # Image template name  
-$imageTemplateName="wsl2WinTemplateV13"
+$imageTemplateName="wsl2WinTemplateV16"
 
-$templateFilename="wsl2TemplateV13.json"
+$templateFilename="wsl2TemplateV16.json"
 
 # Call the new function instead of inline code
 Start-CustomImageBuild -originalTemplateFilename $templateFilename -imageDefName $imageDefName -imageTemplateName $imageTemplateName

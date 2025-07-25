@@ -63,10 +63,22 @@
             "type": "PowerShell",
             "name": "Install WSL2 Ubuntu 22.04",
             "inline": [
-               "Set-ExecutionPolicy Bypass -Scope Process -Force;",
-               "wsl --update",
-               "wsl --shutdown",
-               "wsl --install -d Ubuntu-22.04 --no-launch"
+               "Write-Host 'Starting WSL Ubuntu installation...'",
+               "Set-ExecutionPolicy Bypass -Scope Process -Force",
+               "try {",
+               "   Write-Host 'Setting WSL default version to 2...'",
+               "   wsl --set-default-version 2",
+               "   Write-Host 'Updating WSL...'", 
+               "   wsl --update",
+               "   Write-Host 'Shutting down WSL...'",
+               "   wsl --shutdown",
+               "   Write-Host 'Installing Ubuntu 22.04...'",
+               "   wsl --install -d Ubuntu-22.04 --no-launch",
+               "   Write-Host 'WSL Ubuntu installation completed successfully'",
+               "} catch {",
+               "   Write-Host 'Error occurred: ' + $_.Exception.Message",
+               "   throw",
+               "}"
             ]
          }
         ],
